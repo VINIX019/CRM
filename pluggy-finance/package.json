@@ -1,0 +1,16 @@
+{
+  "name": "pluggy-finance",
+  "version": "1.0.0",
+  "description": "Controle financeiro pessoal via Open Finance (Pluggy)",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "pg": "^8.23.0"
+  }
+}
