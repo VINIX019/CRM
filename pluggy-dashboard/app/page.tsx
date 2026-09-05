@@ -1,34 +1,74 @@
 import { formatBRL } from "@/lib/db";
 import {
   getAccounts,
+  getInvestments,
   getCategorySpending,
+  getAvailableMonths,
   getRecentTransactions,
   getLastSync,
 } from "@/lib/queries";
 import SyncButton from "./sync-button";
+import MonthSelector from "./month-selector";
 
 export const dynamic = "force-dynamic";
 
 const PALETTE = ["c1", "c2", "c3", "c4", "c5", "c6"];
 
-export default async function Page() {
-  const [accounts, categories, transactions, lastSync] = await Promise.all([
-    getAccounts(),
-    getCategorySpending(),
-    getRecentTransactions(),
-    getLastSync(),
-  ]);
+const INVESTMENT_TYPE_LABELS: Record<string, string> = {
+  FIXED_INCOME: "Renda fixa",
+  SECURITY: "Previdência",
+  MUTUAL_FUND: "Fundos",
+  EQUITY: "Ações",
+  ETF: "ETF",
+  COE: "COE",
+};
+
+function currentMonth() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ month?: string }>;
+}) {
+  const params = await searchParams;
+  const months = await getAvailableMonths();
+  const selectedMonth = params.month || months[0] || currentMonth();
+
+  const [accounts, investments, categories, transactions, lastSync] =
+    await Promise.all([
+      getAccounts(),
+      getInvestments(),
+      getCategorySpending(selectedMonth),
+      getRecentTransactions(),
+      getLastSync(),
+    ]);
 
   const bankAccounts = accounts.filter((a) => a.type === "BANK");
   const creditAccounts = accounts.filter((a) => a.type === "CREDIT");
 
   const saldoTotal = bankAccounts.reduce((s, a) => s + Number(a.balance), 0);
   const faturaTotal = creditAccounts.reduce((s, a) => s + Number(a.balance), 0);
+  const limiteTotal = creditAccounts.reduce(
+    (s, a) => s + (Number(a.credit_limit) || 0),
+    0
+  );
 
   const totalGastoMes = categories.reduce(
     (s, c) => s + Math.abs(Number(c.total)),
     0
   );
+
+  const investmentTotal = investments.reduce((s, i) => s + Number(i.balance), 0);
+  const investmentsByType = investments.reduce((acc, inv) => {
+    const key = inv.type;
+    if (!acc[key]) acc[key] = { total: 0, count: 0 };
+    acc[key].total += Number(inv.balance);
+    acc[key].count += 1;
+    return acc;
+  }, {} as Record<string, { total: number; count: number }>);
 
   return (
     <main className="page">
@@ -63,9 +103,9 @@ export default async function Page() {
       </div>
 
       <div className="card">
-        <div className="label">Contas conectadas</div>
+        <div className="label">Contas bancárias</div>
         <div className="account-list">
-          {[...bankAccounts, ...creditAccounts].map((a) => (
+          {bankAccounts.map((a) => (
             <div className="account-row" key={a.id}>
               <div className="info">
                 <div className="name">{a.name}</div>
@@ -78,7 +118,80 @@ export default async function Page() {
       </div>
 
       <div className="card">
-        <div className="label">Gastos por categoria · mês atual</div>
+        <div className="label">Cartões de crédito</div>
+        {limiteTotal > 0 && (
+          <>
+            <div className="sub-value" style={{ marginBottom: 8 }}>
+              {((faturaTotal / limiteTotal) * 100).toFixed(0)}% utilizado ·
+              limite {formatBRL(limiteTotal)}
+            </div>
+            <div className="segment-bar" style={{ marginBottom: 18 }}>
+              <div
+                className="seg"
+                style={{
+                  width: `${Math.min((faturaTotal / limiteTotal) * 100, 100)}%`,
+                  background: "var(--debit)",
+                }}
+              />
+            </div>
+          </>
+        )}
+        <div className="account-list">
+          {creditAccounts.map((a) => (
+            <div className="account-row" key={a.id}>
+              <div className="info">
+                <div className="name">{a.name}</div>
+                <div className="connector">{a.connector_name}</div>
+              </div>
+              <div className="amount">{formatBRL(Number(a.balance))}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {investments.length > 0 && (
+        <div className="card">
+          <div className="label">Investimentos</div>
+          <div className="big-value lime">{formatBRL(investmentTotal)}</div>
+          <div className="sub-value" style={{ marginBottom: 16 }}>
+            {investments.length} ativo(s) · {Object.keys(investmentsByType).length}{" "}
+            classe(s)
+          </div>
+          {Object.entries(investmentsByType).map(([type, data], i) => {
+            const pct = investmentTotal > 0 ? (data.total / investmentTotal) * 100 : 0;
+            const color = `var(--${PALETTE[i % PALETTE.length]})`;
+            return (
+              <div className="category-row" key={type}>
+                <div className="dot" style={{ background: color }}>
+                  {(INVESTMENT_TYPE_LABELS[type] || type).slice(0, 1)}
+                </div>
+                <div className="info">
+                  <div className="name">{INVESTMENT_TYPE_LABELS[type] || type}</div>
+                  <div className="pct">
+                    {pct.toFixed(0)}% · {data.count} ativo(s)
+                  </div>
+                </div>
+                <div className="value">{formatBRL(data.total)}</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="card">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 8,
+          }}
+        >
+          <div className="label" style={{ marginBottom: 0 }}>
+            Gastos por categoria
+          </div>
+          <MonthSelector months={months.length > 0 ? months : [currentMonth()]} />
+        </div>
         <div className="big-value debit">{formatBRL(totalGastoMes)}</div>
 
         {categories.length > 0 && (

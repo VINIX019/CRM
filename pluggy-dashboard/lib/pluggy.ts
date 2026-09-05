@@ -63,3 +63,14 @@ export async function getTransactions(apiKey: string, accountId: string) {
   const data = await res.json();
   return data.results || [];
 }
+
+export async function getInvestments(apiKey: string, itemId: string) {
+  const res = await fetch(`${BASE_URL}/investments?itemId=${itemId}`, {
+    headers: { "X-API-KEY": apiKey },
+  });
+  if (!res.ok) {
+    throw new Error(`Falha ao buscar investimentos (${res.status}): ${await res.text()}`);
+  }
+  const data = await res.json();
+  return data.results || [];
+}

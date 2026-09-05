@@ -5,6 +5,7 @@ import {
   getItem,
   getAccounts,
   getTransactions,
+  getInvestments,
 } from "./pluggy";
 
 async function upsertItem(item: any) {
@@ -22,16 +23,46 @@ async function upsertItem(item: any) {
 
 async function upsertAccount(account: any, itemId: string) {
   const db = getPool();
+  const creditLimit = account.creditData?.creditLimit ?? null;
+  const availableCreditLimit = account.creditData?.availableCreditLimit ?? null;
   await db.query(
-    `insert into openfinance.accounts (id, item_id, name, type, balance, currency_code, updated_at)
-     values ($1, $2, $3, $4, $5, $6, now())
+    `insert into openfinance.accounts (id, item_id, name, type, balance, currency_code, credit_limit, available_credit_limit, updated_at)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, now())
      on conflict (id) do update set
        name = excluded.name,
        type = excluded.type,
        balance = excluded.balance,
        currency_code = excluded.currency_code,
+       credit_limit = excluded.credit_limit,
+       available_credit_limit = excluded.available_credit_limit,
        updated_at = now()`,
-    [account.id, itemId, account.name, account.type, account.balance, account.currencyCode]
+    [
+      account.id,
+      itemId,
+      account.name,
+      account.type,
+      account.balance,
+      account.currencyCode,
+      creditLimit,
+      availableCreditLimit,
+    ]
+  );
+}
+
+async function upsertInvestment(inv: any, itemId: string) {
+  const db = getPool();
+  await db.query(
+    `insert into openfinance.investments (id, item_id, name, type, subtype, balance, currency_code, status, updated_at)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, now())
+     on conflict (id) do update set
+       name = excluded.name,
+       type = excluded.type,
+       subtype = excluded.subtype,
+       balance = excluded.balance,
+       currency_code = excluded.currency_code,
+       status = excluded.status,
+       updated_at = now()`,
+    [inv.id, itemId, inv.name, inv.type, inv.subtype, inv.balance, inv.currencyCode, inv.status]
   );
 }
 
@@ -71,7 +102,14 @@ export async function runSync() {
       const item = await getItem(apiKey, itemId);
       await upsertItem(item);
 
-      const accounts = await getAccounts(apiKey, item.id);
+      const [accounts, investments] = await Promise.all([
+        getAccounts(apiKey, item.id),
+        getInvestments(apiKey, item.id),
+      ]);
+
+      await Promise.all(
+        investments.map((inv: any) => upsertInvestment(inv, item.id))
+      );
 
       await Promise.all(
         accounts.map(async (account: any) => {

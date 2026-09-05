@@ -1,22 +1,4 @@
-﻿// Pluggy Open Finance — script de teste
-// Uso: node index.js
-//
-// Variáveis de ambiente necessárias:
-//   PLUGGY_CLIENT_ID
-//   PLUGGY_CLIENT_SECRET
-//   PLUGGY_ITEM_IDS       (itemIds separados por vírgula, sem espaço —
-//                          copie do dashboard.pluggy.ai, seção da sua
-//                          aplicação. A API da Pluggy não tem endpoint
-//                          para listar todos os items de uma vez, então
-//                          eles precisam ser informados aqui.)
-//
-// Fluxo:
-//   1. Autentica (POST /auth) -> apiKey temporário
-//   2. Para cada itemId em PLUGGY_ITEM_IDS, busca o item, accounts (saldo)
-//      e transactions (extrato)
-//   3. Imprime tudo formatado — nada é salvo em banco ainda
-
-import pg from "pg";
+﻿import pg from "pg";
 
 const BASE_URL = "https://api.pluggy.ai";
 
@@ -114,6 +96,20 @@ async function getTransactions(apiKey, accountId) {
   return data.results || [];
 }
 
+async function getInvestments(apiKey, itemId) {
+  const res = await fetch(`${BASE_URL}/investments?itemId=${itemId}`, {
+    headers: { "X-API-KEY": apiKey },
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Falha ao buscar investimentos (${res.status}): ${text}`);
+  }
+
+  const data = await res.json();
+  return data.results || [];
+}
+
 async function upsertItem(item) {
   const db = getPool();
   await db.query(
@@ -129,16 +125,46 @@ async function upsertItem(item) {
 
 async function upsertAccount(account, itemId) {
   const db = getPool();
+  const creditLimit = account.creditData?.creditLimit ?? null;
+  const availableCreditLimit = account.creditData?.availableCreditLimit ?? null;
   await db.query(
-    `insert into openfinance.accounts (id, item_id, name, type, balance, currency_code, updated_at)
-     values ($1, $2, $3, $4, $5, $6, now())
+    `insert into openfinance.accounts (id, item_id, name, type, balance, currency_code, credit_limit, available_credit_limit, updated_at)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, now())
      on conflict (id) do update set
        name = excluded.name,
        type = excluded.type,
        balance = excluded.balance,
        currency_code = excluded.currency_code,
+       credit_limit = excluded.credit_limit,
+       available_credit_limit = excluded.available_credit_limit,
        updated_at = now()`,
-    [account.id, itemId, account.name, account.type, account.balance, account.currencyCode]
+    [
+      account.id,
+      itemId,
+      account.name,
+      account.type,
+      account.balance,
+      account.currencyCode,
+      creditLimit,
+      availableCreditLimit,
+    ]
+  );
+}
+
+async function upsertInvestment(inv, itemId) {
+  const db = getPool();
+  await db.query(
+    `insert into openfinance.investments (id, item_id, name, type, subtype, balance, currency_code, status, updated_at)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, now())
+     on conflict (id) do update set
+       name = excluded.name,
+       type = excluded.type,
+       subtype = excluded.subtype,
+       balance = excluded.balance,
+       currency_code = excluded.currency_code,
+       status = excluded.status,
+       updated_at = now()`,
+    [inv.id, itemId, inv.name, inv.type, inv.subtype, inv.balance, inv.currencyCode, inv.status]
   );
 }
 
@@ -184,6 +210,12 @@ async function main() {
     }
 
     await upsertItem(item);
+
+    const investments = await getInvestments(apiKey, item.id);
+    for (const inv of investments) {
+      await upsertInvestment(inv, item.id);
+    }
+    console.log(`  ${investments.length} investimento(s) encontrado(s)`);
 
     const accounts = await getAccounts(apiKey, item.id);
 
