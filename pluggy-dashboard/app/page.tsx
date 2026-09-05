@@ -5,6 +5,7 @@ import {
   getRecentTransactions,
   getLastSync,
 } from "@/lib/queries";
+import SyncButton from "./sync-button";
 
 export const dynamic = "force-dynamic";
 
@@ -33,15 +34,18 @@ export default async function Page() {
     <main className="page">
       <div className="masthead">
         <h1>Extrato</h1>
-        <div className="synced">
-          {lastSync
-            ? new Date(lastSync).toLocaleDateString("pt-BR", {
-                day: "2-digit",
-                month: "short",
-                hour: "2-digit",
-                minute: "2-digit",
-              })
-            : "sem sync"}
+        <div style={{ textAlign: "right" }}>
+          <div className="synced">
+            {lastSync
+              ? new Date(lastSync).toLocaleDateString("pt-BR", {
+                  day: "2-digit",
+                  month: "short",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "sem sync"}
+          </div>
+          <SyncButton />
         </div>
       </div>
 
