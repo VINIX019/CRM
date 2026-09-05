@@ -68,14 +68,16 @@ async function upsertInvestment(inv: any, itemId: string) {
 
 async function upsertTransaction(t: any) {
   const db = getPool();
+  const billForecastDate = t.creditCardMetadata?.billForecastDate ?? null;
   await db.query(
-    `insert into openfinance.transactions (id, account_id, date, description, amount, currency_code, category, status)
-     values ($1, $2, $3, $4, $5, $6, $7, $8)
+    `insert into openfinance.transactions (id, account_id, date, description, amount, currency_code, category, status, bill_forecast_date)
+     values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
      on conflict (id) do update set
        description = excluded.description,
        amount = excluded.amount,
        category = excluded.category,
-       status = excluded.status`,
+       status = excluded.status,
+       bill_forecast_date = excluded.bill_forecast_date`,
     [
       t.id,
       t.accountId,
@@ -85,6 +87,7 @@ async function upsertTransaction(t: any) {
       t.currencyCode,
       t.category,
       t.status,
+      billForecastDate,
     ]
   );
 }
