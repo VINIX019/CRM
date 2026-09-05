@@ -13,6 +13,7 @@ import TransactionList from "./transaction-list";
 import MonthSelector from "./month-selector";
 import DonutChart from "./donut-chart";
 import { CHART_COLORS } from "@/lib/chart-colors";
+import { Landmark, CreditCard, TrendingUp, Receipt, History } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -106,7 +107,10 @@ export default async function Page({
       </div>
 
       <div className="card">
-        <div className="label">Contas bancárias</div>
+        <div className="label">
+          <Landmark size={15} strokeWidth={2} />
+          Contas bancárias
+        </div>
         <div className="account-list">
           {bankAccounts.map((a) => (
             <div className="account-row" key={a.id}>
@@ -117,8 +121,11 @@ export default async function Page({
             </div>
           ))}
         </div>
+      </div>
 
-        <div className="label" style={{ marginTop: 20 }}>
+      <div className="card">
+        <div className="label">
+          <CreditCard size={15} strokeWidth={2} />
           Cartões de crédito
         </div>
         <div
@@ -180,7 +187,10 @@ export default async function Page({
 
       {investments.length > 0 && (
         <div className="card">
-          <div className="label">Investimentos</div>
+          <div className="label">
+            <TrendingUp size={15} strokeWidth={2} />
+            Investimentos
+          </div>
           <div className="big-value lime">{formatBRL(investmentTotal)}</div>
           <div className="sub-value" style={{ marginBottom: 16 }}>
             {investments.length} ativo(s) · {Object.keys(investmentsByType).length}{" "}
@@ -223,6 +233,7 @@ export default async function Page({
           }}
         >
           <div className="label" style={{ marginBottom: 0 }}>
+            <Receipt size={15} strokeWidth={2} />
             Gastos por categoria
           </div>
           <MonthSelector
@@ -268,7 +279,10 @@ export default async function Page({
       </div>
 
       <div className="card">
-        <div className="label">Últimos lançamentos</div>
+        <div className="label">
+          <History size={15} strokeWidth={2} />
+          Últimos lançamentos
+        </div>
         <TransactionList transactions={transactions} />
       </div>
     </main>
