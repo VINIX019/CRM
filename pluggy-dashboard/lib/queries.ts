@@ -41,20 +41,26 @@ export async function getInvestments() {
 }
 
 // month no formato 'YYYY-MM'. Exclui transferências entre as próprias contas
-// (identificadas pelo nome do titular aparecendo na descrição).
+// (identificadas pelo nome do titular aparecendo na descrição), e trata
+// corretamente o sinal invertido de cartão de crédito (compra = positivo,
+// pagamento de fatura = negativo — o oposto de conta corrente).
 export async function getCategorySpending(month: string) {
   const db = getPool();
   const res = await db.query(
     `
-    select coalesce(category, 'Sem categoria') as category,
-           sum(amount) as total,
+    select coalesce(t.category, 'Sem categoria') as category,
+           sum(case when a.type = 'CREDIT' then t.amount else -t.amount end) as total,
            count(*) as qtd
-    from openfinance.transactions
-    where amount < 0
-      and to_char(date, 'YYYY-MM') = $1
-      and description not ilike $2
-    group by category
-    order by total asc
+    from openfinance.transactions t
+    join openfinance.accounts a on a.id = t.account_id
+    where (
+      (a.type = 'BANK' and t.amount < 0) or
+      (a.type = 'CREDIT' and t.amount > 0)
+    )
+      and to_char(t.date, 'YYYY-MM') = $1
+      and t.description not ilike $2
+    group by t.category
+    order by total desc
   `,
     [month, `%${SELF_TRANSFER_NAME}%`]
   );
@@ -76,19 +82,21 @@ export async function getRecentTransactions(limit = 25) {
   const db = getPool();
   const res = await db.query(
     `
-    select t.date, t.description, t.amount, a.name as account_name
+    select t.date, t.description, t.amount, a.name as account_name, a.type as account_type
     from openfinance.transactions t
     join openfinance.accounts a on a.id = t.account_id
+    where t.description not ilike $1
     order by t.date desc
-    limit $1
+    limit $2
   `,
-    [limit]
+    [`%${SELF_TRANSFER_NAME}%`, limit]
   );
   return res.rows as {
     date: string;
     description: string;
     amount: string;
     account_name: string;
+    account_type: "BANK" | "CREDIT";
   }[];
 }
 

@@ -115,10 +115,10 @@ export default async function Page({
             </div>
           ))}
         </div>
-      </div>
 
-      <div className="card">
-        <div className="label">Cartões de crédito</div>
+        <div className="label" style={{ marginTop: 20 }}>
+          Cartões de crédito
+        </div>
         {limiteTotal > 0 && (
           <>
             <div className="sub-value" style={{ marginBottom: 8 }}>
@@ -242,6 +242,8 @@ export default async function Page({
         <div className="label">Últimos lançamentos</div>
         {transactions.map((t, i) => {
           const amount = Number(t.amount);
+          const isDebit =
+            t.account_type === "CREDIT" ? amount > 0 : amount < 0;
           return (
             <div className="tx-row" key={i}>
               <div className="info">
@@ -251,7 +253,7 @@ export default async function Page({
                   {t.account_name}
                 </div>
               </div>
-              <div className={`amount ${amount < 0 ? "debit" : "credit"}`}>
+              <div className={`amount ${isDebit ? "debit" : "credit"}`}>
                 {formatBRL(amount)}
               </div>
             </div>
