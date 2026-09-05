@@ -1,8 +1,7 @@
 "use client";
 
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
-
-const COLORS = ["#ff6b9d", "#7c7ff2", "#ffb020", "#4ecb9a", "#22d3c7", "#ffd93d"];
+import { CHART_COLORS } from "@/lib/chart-colors";
 
 type Slice = { label: string; value: number };
 
@@ -24,7 +23,7 @@ export default function DonutChart({ data }: { data: Slice[] }) {
             stroke="none"
           >
             {filtered.map((_, i) => (
-              <Cell key={i} fill={COLORS[i % COLORS.length]} />
+              <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
             ))}
           </Pie>
         </PieChart>

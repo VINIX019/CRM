@@ -18,24 +18,42 @@ export default function MonthSelector({ months }: { months: string[] }) {
   }
 
   return (
-    <select
-      value={current}
-      onChange={handleChange}
-      style={{
-        background: "var(--surface-2)",
-        color: "var(--ink)",
-        border: "none",
-        borderRadius: 999,
-        padding: "6px 12px",
-        fontSize: 12,
-        fontWeight: 500,
-      }}
-    >
-      {months.map((m) => (
-        <option key={m} value={m}>
-          {formatMonthLabel(m)}
-        </option>
-      ))}
-    </select>
+    <div style={{ position: "relative", display: "inline-block" }}>
+      <select
+        value={current}
+        onChange={handleChange}
+        style={{
+          background: "var(--surface-2)",
+          color: "var(--ink)",
+          border: "none",
+          borderRadius: 999,
+          padding: "6px 28px 6px 12px",
+          fontSize: 12,
+          fontWeight: 500,
+          appearance: "none",
+          WebkitAppearance: "none",
+          cursor: "pointer",
+        }}
+      >
+        {months.map((m) => (
+          <option key={m} value={m} style={{ background: "var(--surface)" }}>
+            {formatMonthLabel(m)}
+          </option>
+        ))}
+      </select>
+      <span
+        style={{
+          position: "absolute",
+          right: 10,
+          top: "50%",
+          transform: "translateY(-50%)",
+          pointerEvents: "none",
+          fontSize: 9,
+          color: "var(--ink-muted)",
+        }}
+      >
+        ▾
+      </span>
+    </div>
   );
 }

@@ -12,6 +12,7 @@ import SyncButton from "./sync-button";
 import TransactionList from "./transaction-list";
 import MonthSelector from "./month-selector";
 import DonutChart from "./donut-chart";
+import { CHART_COLORS } from "@/lib/chart-colors";
 
 export const dynamic = "force-dynamic";
 
@@ -120,33 +121,50 @@ export default async function Page({
         <div className="label" style={{ marginTop: 20 }}>
           Cartões de crédito
         </div>
-        <div className="sub-value" style={{ marginBottom: 8 }}>
-          Gasto em{" "}
-          {(() => {
-            const [y, m] = selectedMonth.split("-");
-            return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString(
-              "pt-BR",
-              { month: "long" }
-            );
-          })()}
-          : <strong style={{ color: "var(--debit)" }}>{formatBRL(creditMonthlySpend)}</strong>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-end",
+            marginBottom: 8,
+          }}
+        >
+          <div>
+            <div className="sub-value">
+              Gasto em{" "}
+              {(() => {
+                const [y, m] = selectedMonth.split("-");
+                return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString(
+                  "pt-BR",
+                  { month: "long" }
+                );
+              })()}
+            </div>
+            <div
+              className="big-value debit"
+              style={{ fontSize: 22, marginBottom: 0 }}
+            >
+              {formatBRL(creditMonthlySpend)}
+            </div>
+          </div>
+          {limiteTotal > 0 && (
+            <div className="sub-value" style={{ textAlign: "right" }}>
+              {((faturaTotal / limiteTotal) * 100).toFixed(0)}% do limite
+              <br />
+              {formatBRL(limiteTotal)}
+            </div>
+          )}
         </div>
         {limiteTotal > 0 && (
-          <>
-            <div className="sub-value" style={{ marginBottom: 8 }}>
-              {((faturaTotal / limiteTotal) * 100).toFixed(0)}% utilizado ·
-              limite {formatBRL(limiteTotal)}
-            </div>
-            <div className="segment-bar" style={{ marginBottom: 18 }}>
-              <div
-                className="seg"
-                style={{
-                  width: `${Math.min((faturaTotal / limiteTotal) * 100, 100)}%`,
-                  background: "var(--debit)",
-                }}
-              />
-            </div>
-          </>
+          <div className="segment-bar" style={{ marginBottom: 18 }}>
+            <div
+              className="seg"
+              style={{
+                width: `${Math.min((faturaTotal / limiteTotal) * 100, 100)}%`,
+                background: "var(--debit)",
+              }}
+            />
+          </div>
         )}
         <div className="account-list">
           {creditAccounts.map((a) => (
@@ -174,13 +192,14 @@ export default async function Page({
               value: data.total,
             }))}
           />
-          {Object.entries(investmentsByType).map(([type, data]) => {
+          {Object.entries(investmentsByType).map(([type, data], i) => {
             const pct = investmentTotal > 0 ? (data.total / investmentTotal) * 100 : 0;
             return (
               <div className="category-row" key={type}>
-                <div className="dot">
-                  {(INVESTMENT_TYPE_LABELS[type] || type).slice(0, 1)}
-                </div>
+                <div
+                  className="dot"
+                  style={{ background: CHART_COLORS[i % CHART_COLORS.length] }}
+                />
                 <div className="info">
                   <div className="name">{INVESTMENT_TYPE_LABELS[type] || type}</div>
                   <div className="pct">
@@ -226,12 +245,15 @@ export default async function Page({
         {categories.length === 0 ? (
           <p className="empty">Nenhum gasto registrado neste mês.</p>
         ) : (
-          categories.map((c) => {
+          categories.map((c, i) => {
             const abs = Math.abs(Number(c.total));
             const pct = totalGastoMes > 0 ? (abs / totalGastoMes) * 100 : 0;
             return (
               <div className="category-row" key={c.category}>
-                <div className="dot">{c.category.slice(0, 1).toUpperCase()}</div>
+                <div
+                  className="dot"
+                  style={{ background: CHART_COLORS[i % CHART_COLORS.length] }}
+                />
                 <div className="info">
                   <div className="name">{c.category}</div>
                   <div className="pct">
