@@ -11,6 +11,7 @@ import {
 import SyncButton from "./sync-button";
 import TransactionList from "./transaction-list";
 import MonthSelector from "./month-selector";
+import DonutChart from "./donut-chart";
 
 export const dynamic = "force-dynamic";
 
@@ -167,6 +168,12 @@ export default async function Page({
             {investments.length} ativo(s) · {Object.keys(investmentsByType).length}{" "}
             classe(s)
           </div>
+          <DonutChart
+            data={Object.entries(investmentsByType).map(([type, data]) => ({
+              label: INVESTMENT_TYPE_LABELS[type] || type,
+              value: data.total,
+            }))}
+          />
           {Object.entries(investmentsByType).map(([type, data]) => {
             const pct = investmentTotal > 0 ? (data.total / investmentTotal) * 100 : 0;
             return (
@@ -208,6 +215,13 @@ export default async function Page({
           />
         </div>
         <div className="big-value debit">{formatBRL(totalGastoMes)}</div>
+
+        <DonutChart
+          data={categories.map((c) => ({
+            label: c.category,
+            value: Math.abs(Number(c.total)),
+          }))}
+        />
 
         {categories.length === 0 ? (
           <p className="empty">Nenhum gasto registrado neste mês.</p>
