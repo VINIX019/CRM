@@ -90,6 +90,7 @@ export async function getAvailableMonths() {
   const res = await db.query(`
     select distinct to_char(date, 'YYYY-MM') as month
     from openfinance.transactions
+    where date <= current_date
     order by month desc
     limit 12
   `);
@@ -105,6 +106,7 @@ export async function getRecentTransactions(limit = 25) {
     join openfinance.accounts a on a.id = t.account_id
     where t.description not ilike $1
       and lower(coalesce(t.category, '')) != 'same person transfer'
+      and t.date <= current_date
     order by t.date desc
     limit $2
   `,
@@ -117,6 +119,25 @@ export async function getRecentTransactions(limit = 25) {
     account_name: string;
     account_type: "BANK" | "CREDIT";
   }[];
+}
+
+// Soma só as compras (positivo em cartão) feitas dentro do mês, por conta de
+// crédito. Diferente do saldo de fatura, que mistura ciclos de fechamento.
+export async function getCreditCardMonthlySpend(month: string) {
+  const db = getPool();
+  const res = await db.query(
+    `
+    select coalesce(sum(t.amount), 0) as total
+    from openfinance.transactions t
+    join openfinance.accounts a on a.id = t.account_id
+    where a.type = 'CREDIT'
+      and t.amount > 0
+      and to_char(t.date, 'YYYY-MM') = $1
+      and lower(coalesce(t.category, '')) not in ('same person transfer', 'credit card payment')
+  `,
+    [month]
+  );
+  return Number(res.rows[0]?.total || 0);
 }
 
 export async function getLastSync() {

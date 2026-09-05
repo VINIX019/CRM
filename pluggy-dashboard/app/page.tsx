@@ -4,6 +4,7 @@ import {
   getInvestments,
   getCategorySpending,
   getAvailableMonths,
+  getCreditCardMonthlySpend,
   getRecentTransactions,
   getLastSync,
 } from "@/lib/queries";
@@ -33,13 +34,14 @@ export default async function Page({
 }) {
   const params = await searchParams;
   const months = await getAvailableMonths();
-  const selectedMonth = params.month || months[0] || currentMonth();
+  const selectedMonth = params.month || currentMonth();
 
-  const [accounts, investments, categories, transactions, lastSync] =
+  const [accounts, investments, categories, creditMonthlySpend, transactions, lastSync] =
     await Promise.all([
       getAccounts(),
       getInvestments(),
       getCategorySpending(selectedMonth),
+      getCreditCardMonthlySpend(selectedMonth),
       getRecentTransactions(),
       getLastSync(),
     ]);
@@ -117,6 +119,17 @@ export default async function Page({
         <div className="label" style={{ marginTop: 20 }}>
           Cartões de crédito
         </div>
+        <div className="sub-value" style={{ marginBottom: 8 }}>
+          Gasto em{" "}
+          {(() => {
+            const [y, m] = selectedMonth.split("-");
+            return new Date(Number(y), Number(m) - 1, 1).toLocaleDateString(
+              "pt-BR",
+              { month: "long" }
+            );
+          })()}
+          : <strong style={{ color: "var(--debit)" }}>{formatBRL(creditMonthlySpend)}</strong>
+        </div>
         {limiteTotal > 0 && (
           <>
             <div className="sub-value" style={{ marginBottom: 8 }}>
@@ -187,7 +200,13 @@ export default async function Page({
           <div className="label" style={{ marginBottom: 0 }}>
             Gastos por categoria
           </div>
-          <MonthSelector months={months.length > 0 ? months : [currentMonth()]} />
+          <MonthSelector
+            months={
+              months.includes(currentMonth())
+                ? months
+                : [currentMonth(), ...months]
+            }
+          />
         </div>
         <div className="big-value debit">{formatBRL(totalGastoMes)}</div>
 
