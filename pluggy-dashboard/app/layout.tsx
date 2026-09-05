@@ -1,6 +1,3 @@
-// The CSS file is loaded by Next.js at runtime; this suppresses the editor's
-// missing side-effect import diagnostic when its type declarations are absent.
-// @ts-expect-error -- CSS modules are handled by Next.js.
 import "./globals.css";
 
 export const metadata = {
