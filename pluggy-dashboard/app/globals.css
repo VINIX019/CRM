@@ -1,14 +1,20 @@
 :root {
-  --bg: #12130f;
-  --surface: #1a1c16;
-  --border: #2b2d24;
-  --ink: #ede9dd;
-  --ink-muted: #8c8a78;
-  --debit: #c1443b;
-  --credit: #7fa287;
-  --display: "Spectral", serif;
-  --mono: "IBM Plex Mono", monospace;
-  --ui: "Inter", sans-serif;
+  --bg: #0a0a0c;
+  --surface: #17181c;
+  --surface-2: #1e1f24;
+  --border: #26272c;
+  --ink: #f4f4f2;
+  --ink-muted: #8b8c92;
+  --lime: #c6f135;
+  --debit: #ff6b81;
+  --font: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+
+  --c1: #ff6b9d;
+  --c2: #7c7ff2;
+  --c3: #ffb020;
+  --c4: #4ecb9a;
+  --c5: #22d3c7;
+  --c6: #ffd93d;
 }
 
 * {
@@ -19,190 +25,239 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font-family: var(--ui);
+  font-family: var(--font);
   -webkit-font-smoothing: antialiased;
 }
 
 .page {
-  max-width: 760px;
+  max-width: 480px;
   margin: 0 auto;
-  padding: 56px 20px 80px;
+  padding: 20px 16px 80px;
 }
 
 .masthead {
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 24px;
-  margin-bottom: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 14px 20px;
+  margin-bottom: 20px;
 }
 
 .masthead h1 {
-  font-family: var(--display);
+  font-size: 17px;
   font-weight: 600;
-  font-size: 28px;
-  letter-spacing: 0.01em;
-  margin: 0 0 6px;
+  margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .masthead .synced {
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+
+.card {
+  background: var(--surface);
+  border-radius: 28px;
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+.card .label {
   font-size: 13px;
   color: var(--ink-muted);
-  font-family: var(--mono);
-}
-
-.totals {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1px;
-  background: var(--border);
-  border: 1px solid var(--border);
-  margin-bottom: 48px;
-}
-
-.total-block {
-  background: var(--bg);
-  padding: 20px 24px;
-}
-
-.total-block .label {
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--ink-muted);
   margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.total-block .value {
-  font-family: var(--mono);
-  font-size: 26px;
+.big-value {
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
+  margin-bottom: 4px;
 }
 
-.value.credit {
-  color: var(--credit);
+.big-value.lime {
+  color: var(--lime);
 }
-.value.debit {
+.big-value.debit {
   color: var(--debit);
 }
 
-section {
-  margin-bottom: 48px;
+.sub-value {
+  font-size: 13px;
+  color: var(--ink-muted);
 }
 
-section > h2 {
-  font-family: var(--display);
-  font-size: 15px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--ink-muted);
-  margin: 0 0 18px;
+.totals-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.totals-grid .card {
+  margin-bottom: 0;
+  padding: 20px;
+}
+
+.totals-grid .big-value {
+  font-size: 24px;
+}
+
+.account-list {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .account-row {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
-  padding: 9px 0;
-  border-bottom: 1px dotted var(--border);
-  font-size: 14px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
 }
 
-.account-row .name {
-  white-space: nowrap;
+.account-row:first-child {
+  border-top: none;
 }
-.account-row .connector {
-  color: var(--ink-muted);
+
+.account-row .info .name {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.account-row .info .connector {
   font-size: 12px;
+  color: var(--ink-muted);
 }
-.account-row .filler {
-  flex: 1;
-  border-bottom: 1px dotted var(--border);
-  transform: translateY(-4px);
-  margin: 0 4px;
-}
+
 .account-row .amount {
-  font-family: var(--mono);
+  font-size: 15px;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+}
+
+section {
+  margin-bottom: 16px;
+}
+
+section > h2 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 12px 4px;
+}
+
+.segment-bar {
+  display: flex;
+  height: 10px;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  gap: 2px;
+}
+
+.segment-bar .seg {
+  height: 100%;
 }
 
 .category-row {
-  margin-bottom: 12px;
-}
-.category-row .top {
   display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  margin-bottom: 5px;
-}
-.category-row .cat-name {
-  color: var(--ink);
-}
-.category-row .cat-value {
-  font-family: var(--mono);
-  color: var(--debit);
-}
-.category-row .bar-track {
-  height: 6px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-}
-.category-row .bar-fill {
-  height: 100%;
-  background: var(--debit);
-  opacity: 0.55;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
+.category-row .dot {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 13px;
+  font-weight: 700;
+  color: #0a0a0c;
 }
 
-thead th {
-  text-align: left;
-  font-family: var(--ui);
+.category-row .info {
+  flex: 1;
+  min-width: 0;
+}
+
+.category-row .info .name {
+  font-size: 14px;
   font-weight: 500;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+}
+
+.category-row .info .pct {
+  font-size: 12px;
   color: var(--ink-muted);
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--border);
 }
 
-tbody td {
-  padding: 9px 4px;
-  border-bottom: 1px dotted var(--border);
-  vertical-align: top;
-}
-
-tbody tr:last-child td {
-  border-bottom: none;
-}
-
-td.date,
-td.amount {
-  font-family: var(--mono);
+.category-row .value {
+  font-size: 14px;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
-td.account {
-  color: var(--ink-muted);
-  font-size: 12px;
+.tx-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+
+.tx-row:first-child {
+  border-top: none;
+}
+
+.tx-row .info {
+  min-width: 0;
+}
+
+.tx-row .info .desc {
+  font-size: 14px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-td.amount.debit {
+.tx-row .info .meta {
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+.tx-row .amount {
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.tx-row .amount.debit {
   color: var(--debit);
 }
-td.amount.credit {
-  color: var(--credit);
+.tx-row .amount.credit {
+  color: var(--lime);
 }
 
 .empty {
   color: var(--ink-muted);
   font-size: 13px;
-  font-style: italic;
 }

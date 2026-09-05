@@ -6,7 +6,9 @@ import {
   getLastSync,
 } from "@/lib/queries";
 
-export const dynamic = "force-dynamic"; // sempre busca dado fresco, nada de cache estático
+export const dynamic = "force-dynamic";
+
+const PALETTE = ["c1", "c2", "c3", "c4", "c5", "c6"];
 
 export default async function Page() {
   const [accounts, categories, transactions, lastSync] = await Promise.all([
@@ -22,9 +24,9 @@ export default async function Page() {
   const saldoTotal = bankAccounts.reduce((s, a) => s + Number(a.balance), 0);
   const faturaTotal = creditAccounts.reduce((s, a) => s + Number(a.balance), 0);
 
-  const maxCategoria = Math.max(
-    0,
-    ...categories.map((c) => Math.abs(Number(c.total)))
+  const totalGastoMes = categories.reduce(
+    (s, c) => s + Math.abs(Number(c.total)),
+    0
   );
 
   return (
@@ -33,103 +35,112 @@ export default async function Page() {
         <h1>Extrato</h1>
         <div className="synced">
           {lastSync
-            ? `Última sincronização: ${new Date(lastSync).toLocaleString("pt-BR")}`
-            : "Ainda sem sincronização"}
+            ? new Date(lastSync).toLocaleDateString("pt-BR", {
+                day: "2-digit",
+                month: "short",
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : "sem sync"}
         </div>
       </div>
 
-      <div className="totals">
-        <div className="total-block">
+      <div className="totals-grid">
+        <div className="card">
           <div className="label">Saldo em conta</div>
-          <div className={`value ${saldoTotal >= 0 ? "credit" : "debit"}`}>
+          <div className={`big-value ${saldoTotal >= 0 ? "lime" : "debit"}`}>
             {formatBRL(saldoTotal)}
           </div>
         </div>
-        <div className="total-block">
+        <div className="card">
           <div className="label">Fatura de cartões</div>
-          <div className="value debit">{formatBRL(faturaTotal)}</div>
+          <div className="big-value debit">{formatBRL(faturaTotal)}</div>
         </div>
       </div>
 
-      <section>
-        <h2>Contas</h2>
-        {bankAccounts.map((a) => (
-          <div className="account-row" key={a.id}>
-            <span className="name">{a.name}</span>
-            <span className="connector">{a.connector_name}</span>
-            <span className="filler" />
-            <span className="amount">{formatBRL(Number(a.balance))}</span>
-          </div>
-        ))}
-      </section>
+      <div className="card">
+        <div className="label">Contas conectadas</div>
+        <div className="account-list">
+          {[...bankAccounts, ...creditAccounts].map((a) => (
+            <div className="account-row" key={a.id}>
+              <div className="info">
+                <div className="name">{a.name}</div>
+                <div className="connector">{a.connector_name}</div>
+              </div>
+              <div className="amount">{formatBRL(Number(a.balance))}</div>
+            </div>
+          ))}
+        </div>
+      </div>
 
-      <section>
-        <h2>Cartões</h2>
-        {creditAccounts.map((a) => (
-          <div className="account-row" key={a.id}>
-            <span className="name">{a.name}</span>
-            <span className="connector">{a.connector_name}</span>
-            <span className="filler" />
-            <span className="amount">{formatBRL(Number(a.balance))}</span>
-          </div>
-        ))}
-      </section>
+      <div className="card">
+        <div className="label">Gastos por categoria · mês atual</div>
+        <div className="big-value debit">{formatBRL(totalGastoMes)}</div>
 
-      <section>
-        <h2>Gastos por categoria · mês atual</h2>
+        {categories.length > 0 && (
+          <div className="segment-bar" style={{ marginTop: 20 }}>
+            {categories.map((c, i) => {
+              const abs = Math.abs(Number(c.total));
+              const pct = totalGastoMes > 0 ? (abs / totalGastoMes) * 100 : 0;
+              return (
+                <div
+                  key={c.category}
+                  className="seg"
+                  style={{
+                    width: `${pct}%`,
+                    background: `var(--${PALETTE[i % PALETTE.length]})`,
+                  }}
+                />
+              );
+            })}
+          </div>
+        )}
+
         {categories.length === 0 ? (
           <p className="empty">Nenhum gasto registrado neste mês.</p>
         ) : (
-          categories.map((c) => {
+          categories.map((c, i) => {
             const abs = Math.abs(Number(c.total));
-            const pct = maxCategoria > 0 ? (abs / maxCategoria) * 100 : 0;
+            const pct = totalGastoMes > 0 ? (abs / totalGastoMes) * 100 : 0;
+            const color = `var(--${PALETTE[i % PALETTE.length]})`;
             return (
               <div className="category-row" key={c.category}>
-                <div className="top">
-                  <span className="cat-name">
-                    {c.category} · {c.qtd}x
-                  </span>
-                  <span className="cat-value">{formatBRL(abs)}</span>
+                <div className="dot" style={{ background: color }}>
+                  {c.category.slice(0, 1).toUpperCase()}
                 </div>
-                <div className="bar-track">
-                  <div className="bar-fill" style={{ width: `${pct}%` }} />
+                <div className="info">
+                  <div className="name">{c.category}</div>
+                  <div className="pct">
+                    {pct.toFixed(0)}% dos gastos · {c.qtd}x
+                  </div>
                 </div>
+                <div className="value">{formatBRL(abs)}</div>
               </div>
             );
           })
         )}
-      </section>
+      </div>
 
-      <section>
-        <h2>Últimos lançamentos</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Data</th>
-              <th>Conta</th>
-              <th>Descrição</th>
-              <th>Valor</th>
-            </tr>
-          </thead>
-          <tbody>
-            {transactions.map((t, i) => {
-              const amount = Number(t.amount);
-              return (
-                <tr key={i}>
-                  <td className="date">
-                    {new Date(t.date).toLocaleDateString("pt-BR")}
-                  </td>
-                  <td className="account">{t.account_name}</td>
-                  <td>{t.description}</td>
-                  <td className={`amount ${amount < 0 ? "debit" : "credit"}`}>
-                    {formatBRL(amount)}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </section>
+      <div className="card">
+        <div className="label">Últimos lançamentos</div>
+        {transactions.map((t, i) => {
+          const amount = Number(t.amount);
+          return (
+            <div className="tx-row" key={i}>
+              <div className="info">
+                <div className="desc">{t.description}</div>
+                <div className="meta">
+                  {new Date(t.date).toLocaleDateString("pt-BR")} ·{" "}
+                  {t.account_name}
+                </div>
+              </div>
+              <div className={`amount ${amount < 0 ? "debit" : "credit"}`}>
+                {formatBRL(amount)}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </main>
   );
 }

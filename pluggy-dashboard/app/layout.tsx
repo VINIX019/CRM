@@ -1,3 +1,6 @@
+// The CSS file is loaded by Next.js at runtime; this suppresses the editor's
+// missing side-effect import diagnostic when its type declarations are absent.
+// @ts-expect-error -- CSS modules are handled by Next.js.
 import "./globals.css";
 
 export const metadata = {
@@ -15,7 +18,7 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;600&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
       </head>
