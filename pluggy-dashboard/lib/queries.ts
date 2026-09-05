@@ -41,10 +41,13 @@ export async function getInvestments() {
 }
 
 // month no formato 'YYYY-MM'. Exclui transferências entre as próprias contas
-// (identificadas pelo nome do titular aparecendo na descrição), e trata
-// corretamente o sinal invertido de cartão de crédito (compra = positivo,
-// pagamento de fatura = negativo — o oposto de conta corrente).
-export async function getCategorySpending(month: string) {
+// e pagamentos de fatura de cartão usando as categorias que a própria Pluggy
+// atribui ("Same person transfer", "Credit card payment") — mais confiável
+// que casar nome na descrição. Trata o sinal invertido de cartão de crédito
+// (compra = positivo, pagamento de fatura = negativo).
+const EXCLUDED_CATEGORIES = ["same person transfer", "credit card payment"];
+
+export async function getCategorySpending(month: string, topN = 5) {
   const db = getPool();
   const res = await db.query(
     `
@@ -58,13 +61,28 @@ export async function getCategorySpending(month: string) {
       (a.type = 'CREDIT' and t.amount > 0)
     )
       and to_char(t.date, 'YYYY-MM') = $1
-      and t.description not ilike $2
+      and lower(coalesce(t.category, '')) not in (${EXCLUDED_CATEGORIES.map(
+        (_, i) => `$${i + 2}`
+      ).join(", ")})
+      and t.description not ilike $${EXCLUDED_CATEGORIES.length + 2}
     group by t.category
     order by total desc
   `,
-    [month, `%${SELF_TRANSFER_NAME}%`]
+    [month, ...EXCLUDED_CATEGORIES, `%${SELF_TRANSFER_NAME}%`]
   );
-  return res.rows as { category: string; total: string; qtd: string }[];
+
+  const rows = res.rows as { category: string; total: string; qtd: string }[];
+  if (rows.length <= topN) return rows;
+
+  const top = rows.slice(0, topN);
+  const rest = rows.slice(topN);
+  const outrosTotal = rest.reduce((s, r) => s + Number(r.total), 0);
+  const outrosQtd = rest.reduce((s, r) => s + Number(r.qtd), 0);
+
+  return [
+    ...top,
+    { category: "Outros", total: String(outrosTotal), qtd: String(outrosQtd) },
+  ];
 }
 
 export async function getAvailableMonths() {
@@ -86,6 +104,7 @@ export async function getRecentTransactions(limit = 25) {
     from openfinance.transactions t
     join openfinance.accounts a on a.id = t.account_id
     where t.description not ilike $1
+      and lower(coalesce(t.category, '')) != 'same person transfer'
     order by t.date desc
     limit $2
   `,

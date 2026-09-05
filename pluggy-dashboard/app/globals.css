@@ -189,7 +189,8 @@ section > h2 {
   justify-content: center;
   font-size: 13px;
   font-weight: 700;
-  color: #0a0a0c;
+  background: var(--surface-2);
+  color: var(--ink-muted);
 }
 
 .category-row .info {

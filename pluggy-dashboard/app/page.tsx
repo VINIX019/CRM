@@ -12,8 +12,6 @@ import MonthSelector from "./month-selector";
 
 export const dynamic = "force-dynamic";
 
-const PALETTE = ["c1", "c2", "c3", "c4", "c5", "c6"];
-
 const INVESTMENT_TYPE_LABELS: Record<string, string> = {
   FIXED_INCOME: "Renda fixa",
   SECURITY: "Previdência",
@@ -157,12 +155,11 @@ export default async function Page({
             {investments.length} ativo(s) · {Object.keys(investmentsByType).length}{" "}
             classe(s)
           </div>
-          {Object.entries(investmentsByType).map(([type, data], i) => {
+          {Object.entries(investmentsByType).map(([type, data]) => {
             const pct = investmentTotal > 0 ? (data.total / investmentTotal) * 100 : 0;
-            const color = `var(--${PALETTE[i % PALETTE.length]})`;
             return (
               <div className="category-row" key={type}>
-                <div className="dot" style={{ background: color }}>
+                <div className="dot">
                   {(INVESTMENT_TYPE_LABELS[type] || type).slice(0, 1)}
                 </div>
                 <div className="info">
@@ -194,37 +191,15 @@ export default async function Page({
         </div>
         <div className="big-value debit">{formatBRL(totalGastoMes)}</div>
 
-        {categories.length > 0 && (
-          <div className="segment-bar" style={{ marginTop: 20 }}>
-            {categories.map((c, i) => {
-              const abs = Math.abs(Number(c.total));
-              const pct = totalGastoMes > 0 ? (abs / totalGastoMes) * 100 : 0;
-              return (
-                <div
-                  key={c.category}
-                  className="seg"
-                  style={{
-                    width: `${pct}%`,
-                    background: `var(--${PALETTE[i % PALETTE.length]})`,
-                  }}
-                />
-              );
-            })}
-          </div>
-        )}
-
         {categories.length === 0 ? (
           <p className="empty">Nenhum gasto registrado neste mês.</p>
         ) : (
-          categories.map((c, i) => {
+          categories.map((c) => {
             const abs = Math.abs(Number(c.total));
             const pct = totalGastoMes > 0 ? (abs / totalGastoMes) * 100 : 0;
-            const color = `var(--${PALETTE[i % PALETTE.length]})`;
             return (
               <div className="category-row" key={c.category}>
-                <div className="dot" style={{ background: color }}>
-                  {c.category.slice(0, 1).toUpperCase()}
-                </div>
+                <div className="dot">{c.category.slice(0, 1).toUpperCase()}</div>
                 <div className="info">
                   <div className="name">{c.category}</div>
                   <div className="pct">
