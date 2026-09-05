@@ -147,6 +147,34 @@ export async function getCreditCardMonthlySpend(month: string) {
   return Number(res.rows[0]?.total || 0);
 }
 
+// Mesmo cálculo, mas por conta individual — pra comparar cartão a cartão
+// com o app do banco, em vez de um total combinado que mistura cartões.
+export async function getCreditCardMonthlySpendByAccount(month: string) {
+  const db = getPool();
+  const res = await db.query(
+    `
+    select t.account_id, coalesce(sum(t.amount), 0) as total
+    from openfinance.transactions t
+    join openfinance.accounts a on a.id = t.account_id
+    where a.type = 'CREDIT'
+      and t.amount > 0
+      and coalesce(t.bill_forecast_date, to_char(t.date, 'YYYY-MM')) = $1
+      and lower(coalesce(t.category, '')) != 'credit card payment'
+      and not (
+        lower(coalesce(t.category, '')) = any($2)
+        or t.description ilike $3
+      )
+    group by t.account_id
+  `,
+    [month, SELF_TRANSFER_CATEGORIES, `%${SELF_TRANSFER_NAME}%`]
+  );
+  const map: Record<string, number> = {};
+  for (const row of res.rows) {
+    map[row.account_id] = Number(row.total);
+  }
+  return map;
+}
+
 export async function getLastSync() {
   const db = getPool();
   const res = await db.query(

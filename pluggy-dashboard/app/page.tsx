@@ -5,6 +5,7 @@ import {
   getCategorySpending,
   getAvailableMonths,
   getCreditCardMonthlySpend,
+  getCreditCardMonthlySpendByAccount,
   getRecentTransactions,
   getLastSync,
 } from "@/lib/queries";
@@ -40,15 +41,23 @@ export default async function Page({
   const months = await getAvailableMonths();
   const selectedMonth = params.month || currentMonth();
 
-  const [accounts, investments, categories, creditMonthlySpend, transactions, lastSync] =
-    await Promise.all([
-      getAccounts(),
-      getInvestments(),
-      getCategorySpending(selectedMonth),
-      getCreditCardMonthlySpend(selectedMonth),
-      getRecentTransactions(),
-      getLastSync(),
-    ]);
+  const [
+    accounts,
+    investments,
+    categories,
+    creditMonthlySpend,
+    creditSpendByAccount,
+    transactions,
+    lastSync,
+  ] = await Promise.all([
+    getAccounts(),
+    getInvestments(),
+    getCategorySpending(selectedMonth),
+    getCreditCardMonthlySpend(selectedMonth),
+    getCreditCardMonthlySpendByAccount(selectedMonth),
+    getRecentTransactions(),
+    getLastSync(),
+  ]);
 
   const bankAccounts = accounts.filter((a) => a.type === "BANK");
   const creditAccounts = accounts.filter((a) => a.type === "CREDIT");
@@ -178,6 +187,11 @@ export default async function Page({
             <div className="account-row" key={a.id}>
               <div className="info">
                 <div className="name">{a.name}</div>
+                {creditSpendByAccount[a.id] > 0 && (
+                  <div className="connector">
+                    Gasto no mês: {formatBRL(creditSpendByAccount[a.id])}
+                  </div>
+                )}
               </div>
               <div className="amount">{formatBRL(Number(a.balance))}</div>
             </div>
