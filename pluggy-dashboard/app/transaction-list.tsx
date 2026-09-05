@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { formatBRL } from "@/lib/db";
+import { formatBRL } from "@/lib/format";
 
 type Tx = {
   date: string;

@@ -1,8 +1,5 @@
 import { Pool } from "pg";
 
-// Este arquivo só é importado por Server Components e Route Handlers,
-// então DATABASE_URL nunca é enviado ao navegador.
-
 let pool: Pool | undefined;
 
 export function getPool() {
@@ -14,14 +11,9 @@ export function getPool() {
     pool = new Pool({
       connectionString,
       ssl: { rejectUnauthorized: false },
+      max: 1, 
+      idleTimeoutMillis: 10000,
     });
   }
   return pool;
-}
-
-export function formatBRL(value: number) {
-  return Number(value).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
 }

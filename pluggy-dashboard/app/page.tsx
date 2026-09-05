@@ -1,4 +1,4 @@
-import { formatBRL } from "@/lib/db";
+import { formatBRL } from "@/lib/format";
 import {
   getAccounts,
   getInvestments,
