@@ -9,6 +9,7 @@ import {
   getLastSync,
 } from "@/lib/queries";
 import SyncButton from "./sync-button";
+import TransactionList from "./transaction-list";
 import MonthSelector from "./month-selector";
 
 export const dynamic = "force-dynamic";
@@ -109,7 +110,6 @@ export default async function Page({
             <div className="account-row" key={a.id}>
               <div className="info">
                 <div className="name">{a.name}</div>
-                <div className="connector">{a.connector_name}</div>
               </div>
               <div className="amount">{formatBRL(Number(a.balance))}</div>
             </div>
@@ -152,7 +152,6 @@ export default async function Page({
             <div className="account-row" key={a.id}>
               <div className="info">
                 <div className="name">{a.name}</div>
-                <div className="connector">{a.connector_name}</div>
               </div>
               <div className="amount">{formatBRL(Number(a.balance))}</div>
             </div>
@@ -234,25 +233,7 @@ export default async function Page({
 
       <div className="card">
         <div className="label">Últimos lançamentos</div>
-        {transactions.map((t, i) => {
-          const amount = Number(t.amount);
-          const isDebit =
-            t.account_type === "CREDIT" ? amount > 0 : amount < 0;
-          return (
-            <div className="tx-row" key={i}>
-              <div className="info">
-                <div className="desc">{t.description}</div>
-                <div className="meta">
-                  {new Date(t.date).toLocaleDateString("pt-BR")} ·{" "}
-                  {t.account_name}
-                </div>
-              </div>
-              <div className={`amount ${isDebit ? "debit" : "credit"}`}>
-                {formatBRL(amount)}
-              </div>
-            </div>
-          );
-        })}
+        <TransactionList transactions={transactions} />
       </div>
     </main>
   );
