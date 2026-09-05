@@ -135,7 +135,7 @@ export async function getCreditCardMonthlySpend(month: string) {
     join openfinance.accounts a on a.id = t.account_id
     where a.type = 'CREDIT'
       and t.amount > 0
-      and coalesce(t.bill_forecast_date, to_char(t.date, 'YYYY-MM')) = $1
+      and to_char(t.date, 'YYYY-MM') = $1
       and lower(coalesce(t.category, '')) != 'credit card payment'
       and not (
         lower(coalesce(t.category, '')) = any($2)
@@ -158,7 +158,7 @@ export async function getCreditCardMonthlySpendByAccount(month: string) {
     join openfinance.accounts a on a.id = t.account_id
     where a.type = 'CREDIT'
       and t.amount > 0
-      and coalesce(t.bill_forecast_date, to_char(t.date, 'YYYY-MM')) = $1
+      and to_char(t.date, 'YYYY-MM') = $1
       and lower(coalesce(t.category, '')) != 'credit card payment'
       and not (
         lower(coalesce(t.category, '')) = any($2)
