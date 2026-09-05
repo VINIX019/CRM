@@ -40,11 +40,15 @@ export async function getInvestments() {
   }[];
 }
 
-// month no formato 'YYYY-MM'. Exclui qualquer categoria de transferência
-// (a Pluggy usa vários nomes: "Same person transfer", "Transfer - Internal",
-// "Transfers", "Transfer - PIX" etc.) e pagamento de fatura de cartão — nenhum
-// dos dois é gasto/consumo real. Trata o sinal invertido de cartão de crédito
-// (compra = positivo, pagamento de fatura = negativo).
+// month no formato 'YYYY-MM'. Exclui só transferência PRA VOCÊ MESMO —
+// categoria explícita "Same person transfer"/"Transfer - Internal" (entre
+// suas próprias contas) ou quando seu nome aparece na descrição. Transferência
+// pra terceiro (PIX/TED genérico) continua contando como gasto. Também exclui
+// pagamento de fatura de cartão (nunca é gasto — já contado na compra em si).
+// Trata o sinal invertido de cartão de crédito (compra = positivo, pagamento
+// de fatura = negativo).
+const SELF_TRANSFER_CATEGORIES = ["same person transfer", "transfer - internal"];
+
 export async function getCategorySpending(month: string, topN = 5) {
   const db = getPool();
   const res = await db.query(
@@ -59,13 +63,15 @@ export async function getCategorySpending(month: string, topN = 5) {
       (a.type = 'CREDIT' and t.amount > 0)
     )
       and to_char(t.date, 'YYYY-MM') = $1
-      and lower(coalesce(t.category, '')) not like '%transfer%'
       and lower(coalesce(t.category, '')) != 'credit card payment'
-      and t.description not ilike $2
+      and not (
+        lower(coalesce(t.category, '')) = any($2)
+        or t.description ilike $3
+      )
     group by t.category
     order by total desc
   `,
-    [month, `%${SELF_TRANSFER_NAME}%`]
+    [month, SELF_TRANSFER_CATEGORIES, `%${SELF_TRANSFER_NAME}%`]
   );
 
   const rows = res.rows as { category: string; total: string; qtd: string }[];
@@ -130,10 +136,13 @@ export async function getCreditCardMonthlySpend(month: string) {
     where a.type = 'CREDIT'
       and t.amount > 0
       and to_char(t.date, 'YYYY-MM') = $1
-      and lower(coalesce(t.category, '')) not like '%transfer%'
       and lower(coalesce(t.category, '')) != 'credit card payment'
+      and not (
+        lower(coalesce(t.category, '')) = any($2)
+        or t.description ilike $3
+      )
   `,
-    [month]
+    [month, SELF_TRANSFER_CATEGORIES, `%${SELF_TRANSFER_NAME}%`]
   );
   return Number(res.rows[0]?.total || 0);
 }
